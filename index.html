@@ -1,0 +1,2124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <!-- iOS-specific -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>RF Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Anybody:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: #f5ebe0;
+            color: #2d2d2d;
+            overflow: hidden;
+        }
+
+        .loading {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #e8b4b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.8s;
+        }
+
+        .loading.hide { opacity: 0; pointer-events: none; }
+
+        .loading h1 {
+            font-family: 'Anybody', sans-serif;
+            font-size: 280px;
+            font-weight: 900;
+            color: #2d2d2d;
+        }
+
+        .content { display: none; }
+        .content.show { display: block; }
+
+        .scroll-container {
+            display: flex;
+            height: 100vh;
+            width: 400vw;
+            transition: transform 1.5s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        section {
+            width: 100vw;
+            height: 100vh;
+            flex-shrink: 0;
+        }
+
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            display: none; /* Hidden by default */
+        }
+
+        #particle-canvas.home-only {
+            display: block; /* Show only on home */
+        }
+
+        .cursor-glow {
+            position: fixed;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(232, 180, 184, 0.7) 0%, rgba(232, 180, 184, 0.3) 50%, transparent 70%);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 2;
+            mix-blend-mode: multiply;
+            /* ALWAYS VISIBLE - ALL PAGES! */
+        }
+
+        #home {
+            position: relative;
+            background: #f4d35e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .home-text {
+            text-align: center;
+            position: relative;
+            z-index: 3;
+        }
+
+        .home-text h1 {
+            font-family: 'Anybody', sans-serif;
+            font-size: clamp(200px, 30vw, 450px);
+            font-weight: 900;
+            color: #2d2d2d;
+            letter-spacing: -10px;
+            margin-bottom: 8px; /* REDUCED from 15px - much closer! */
+        }
+
+        .home-text p {
+            font-family: 'Anybody', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+
+        .scroll-hint {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Nunito', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.5;
+            z-index: 3;
+        }
+
+        .home-nav {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 60px;
+            z-index: 3;
+        }
+
+        .home-nav a {
+            font-family: 'Nunito', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #2d2d2d;
+            text-decoration: none;
+            opacity: 0.6;
+            transition: all 0.4s ease;
+            position: relative;
+            padding-top: 25px;
+        }
+
+        .home-nav a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #2d2d2d;
+            opacity: 0.3;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .home-nav a:hover {
+            opacity: 1;
+            letter-spacing: 4px;
+        }
+
+        .home-nav a:hover::before {
+            opacity: 1;
+            width: 10px;
+            height: 10px;
+            box-shadow: 0 0 20px rgba(232, 180, 184, 0.8),
+                        0 0 40px rgba(232, 180, 184, 0.4);
+            background: #e8b4b8;
+            transform: translateX(-50%) translateY(-3px);
+        }
+
+        #about {
+            background: #e8b4b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px;
+        }
+
+        .section-title {
+            font-family: 'Anybody', sans-serif;
+            font-size: 100px;
+            font-weight: 900;
+            color: #2d2d2d;
+            letter-spacing: -3px;
+            margin-bottom: 40px;
+            position: relative;
+            top: -20px; /* Align both titles to same vertical position */
+        }
+
+        .about-content {
+            max-width: 750px;
+        }
+
+        .about-text {
+            font-family: 'Nunito', sans-serif;
+            font-size: 19px;
+            font-weight: 500;
+            line-height: 1.9;
+            opacity: 0.9;
+        }
+
+        .about-text p {
+            margin-bottom: 20px;
+        }
+
+        .about-teaser {
+            font-family: 'Nunito', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            opacity: 0.5;
+            margin-bottom: 35px;
+            text-align: center;
+        }
+
+        #works {
+            background: #c8d5b9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 100px; /* Tighter padding to fit viewport */
+            position: relative;
+        }
+
+        .works-container {
+            max-width: 1000px; /* Slightly narrower */
+            width: 100%;
+        }
+
+        .work-section {
+            margin-bottom: 40px; /* Reduced for tighter fit */
+        }
+
+        .work-section-label {
+            font-family: 'Nunito', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.5;
+            margin-bottom: 10px; /* Reduced */
+            text-align: center;
+        }
+
+        .work-hint {
+            font-family: 'Nunito', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.5;
+            text-align: center;
+            margin-top: 30px; /* Reduced */
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        .dots-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 50px;
+            margin-top: 30px;
+            justify-items: center;
+        }
+
+        .dots-grid-future {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 50px;
+            margin-top: 30px;
+            justify-items: center;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* DOT CONTAINER - holds dot + label */
+        .dot-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* EXPERIENCE DOT - Clean & Simple */
+        .experience-dot {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            opacity: 0.5;
+            filter: blur(0.5px);
+        }
+
+        .experience-dot::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: inherit;
+            filter: blur(12px);
+            opacity: 0.5;
+            z-index: -1;
+            transition: all 0.4s;
+        }
+
+        .experience-dot:hover {
+            transform: scale(1.15);
+            opacity: 0.95;
+            filter: blur(0px);
+        }
+
+        .experience-dot:hover::before {
+            filter: blur(20px);
+            opacity: 0.8;
+        }
+
+        /* DOT GRADIENTS */
+        .dot-1 { background: radial-gradient(circle, rgba(232, 180, 184, 0.85), rgba(244, 211, 94, 0.65)); }
+        .dot-2 { background: radial-gradient(circle, rgba(200, 213, 185, 0.85), rgba(232, 180, 184, 0.65)); }
+        .dot-3 { background: radial-gradient(circle, rgba(244, 211, 94, 0.85), rgba(200, 213, 185, 0.65)); }
+        .dot-4 { background: radial-gradient(circle, rgba(184, 160, 84, 0.85), rgba(232, 180, 184, 0.65)); }
+        .dot-5 { background: radial-gradient(circle, rgba(232, 180, 184, 0.85), rgba(200, 213, 185, 0.65)); }
+        .dot-6 { background: radial-gradient(circle, rgba(244, 211, 94, 0.85), rgba(184, 160, 84, 0.65)); }
+        .dot-7 { background: radial-gradient(circle, rgba(200, 213, 185, 0.85), rgba(244, 211, 94, 0.65)); }
+        .dot-8 { background: radial-gradient(circle, rgba(232, 180, 184, 0.85), rgba(184, 160, 84, 0.65)); }
+        .dot-9 { background: radial-gradient(circle, rgba(184, 160, 84, 0.85), rgba(200, 213, 185, 0.65)); }
+        .dot-10 { background: radial-gradient(circle, rgba(244, 211, 94, 0.85), rgba(232, 180, 184, 0.65)); }
+
+        /* LABEL BELOW DOT - Clean & Simple */
+        .dot-label {
+            font-family: 'Nunito', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            color: rgba(45, 45, 45, 0.6);
+            text-align: center;
+            line-height: 1.3;
+            max-width: 100px;
+        }
+
+        /* CONNECTING DOTS AESTHETIC MODAL - HORIZONTAL LAYOUT */
+        .work-modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(200, 213, 185, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        .work-modal.active { opacity: 1; pointer-events: all; }
+
+        .work-modal-box {
+            background: linear-gradient(135deg, 
+                rgba(245, 235, 224, 0.98) 0%, 
+                rgba(232, 180, 184, 0.15) 100%); /* Gradient echoing dot 1! */
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 40px; /* Rounded corners! */
+            padding: 50px 90px; /* INCREASED horizontal padding for arrows! */
+            max-width: 900px; /* Wider for horizontal layout */
+            width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 25px 70px rgba(45, 45, 45, 0.25),
+                        inset 0 0 0 1px rgba(232, 180, 184, 0.4);
+            transform: scale(0.85) translateY(50px);
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Connecting dots decoration */
+        .work-modal-box::before,
+        .work-modal-box::after {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(232, 180, 184, 0.9), rgba(244, 211, 94, 0.6));
+            filter: blur(2px);
+            box-shadow: 0 0 20px rgba(232, 180, 184, 0.6);
+        }
+
+        .work-modal-box::before {
+            top: -7px;
+            left: 25%;
+        }
+
+        .work-modal-box::after {
+            bottom: -7px;
+            right: 30%;
+        }
+
+        .work-modal.active .work-modal-box { transform: scale(1) translateY(0); }
+
+        .work-modal-close {
+            position: absolute;
+            top: 20px; right: 20px;
+            width: 45px; height: 45px;
+            border: 2px solid rgba(232, 180, 184, 0.4);
+            border-radius: 50%;
+            background: rgba(232, 180, 184, 0.25);
+            font-size: 22px;
+            font-weight: 700;
+            color: #2d2d2d;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .work-modal-close:hover {
+            background: rgba(232, 180, 184, 0.6);
+            transform: rotate(90deg);
+            border-color: rgba(232, 180, 184, 0.8);
+        }
+
+        /* NAVIGATION ARROWS */
+        .work-modal-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            border: 2px solid rgba(232, 180, 184, 0.4);
+            border-radius: 50%;
+            background: rgba(232, 180, 184, 0.25);
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d2d2d;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .work-modal-nav:hover {
+            background: rgba(232, 180, 184, 0.5);
+            border-color: rgba(232, 180, 184, 0.8);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .work-modal-nav.disabled {
+            opacity: 0.2;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .work-modal-prev {
+            left: 15px; /* INSIDE the modal box */
+        }
+
+        .work-modal-next {
+            right: 15px; /* INSIDE the modal box */
+        }
+
+        /* HEADER SECTION */
+        .work-modal-header {
+            margin-bottom: 35px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid rgba(232, 180, 184, 0.3);
+        }
+
+        .work-modal-title {
+            font-family: 'Anybody', sans-serif;
+            font-size: 42px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            color: #2d2d2d;
+            line-height: 1.1;
+        }
+
+        .work-modal-year {
+            font-family: 'Nunito', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(139, 141, 90, 0.8);
+            margin-bottom: 8px;
+        }
+
+        .work-modal-subtitle {
+            font-family: 'Nunito', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.5;
+            color: rgba(45, 45, 45, 0.65);
+            font-style: italic;
+        }
+
+        /* TOGGLE BUTTON */
+        .work-modal-toggle {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .toggle-btn {
+            font-family: 'Nunito', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 8px 18px;
+            border: 2px solid rgba(232, 180, 184, 0.4);
+            border-radius: 20px;
+            background: transparent;
+            color: rgba(45, 45, 45, 0.5);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .toggle-btn.active {
+            background: rgba(232, 180, 184, 0.4);
+            color: #2d2d2d;
+            border-color: rgba(232, 180, 184, 0.8);
+        }
+
+        .toggle-btn:hover:not(.active) {
+            background: rgba(232, 180, 184, 0.15);
+            color: rgba(45, 45, 45, 0.7);
+        }
+
+        /* NUTSHELL VIEW - REDESIGNED WITH BULLET POINTS */
+        .work-modal-nutshell {
+            font-family: 'Nunito', sans-serif;
+            padding: 30px 60px;
+        }
+
+        /* Section labels (IMPACT, SKILLS) */
+        .nutshell-section-label {
+            font-family: 'Anybody', sans-serif;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(45, 45, 45, 0.5);
+            margin-bottom: 15px;
+            margin-top: 0;
+        }
+
+        .nutshell-section-label.skills-label {
+            margin-top: 30px; /* Space between IMPACT and SKILLS */
+        }
+
+        /* Bullet points for impact */
+        .nutshell-bullets {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 0 0;
+        }
+
+        .nutshell-bullets li {
+            font-size: 17px;
+            font-weight: 600;
+            line-height: 1.6;
+            color: #2d2d2d;
+            margin-bottom: 12px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .nutshell-bullets li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: rgba(232, 180, 184, 0.8);
+            font-size: 20px;
+            font-weight: 900;
+            line-height: 1.6;
+        }
+
+        .nutshell-bullets li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Skills section */
+        .nutshell-skills {
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.8;
+            color: rgba(45, 45, 45, 0.65);
+            letter-spacing: 0.3px;
+        }
+
+        .nutshell-cta {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .read-full-btn {
+            font-family: 'Nunito', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 10px 24px;
+            border: 2px solid rgba(232, 180, 184, 0.5);
+            border-radius: 25px;
+            background: rgba(232, 180, 184, 0.2);
+            color: #2d2d2d;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .read-full-btn:hover {
+            background: rgba(232, 180, 184, 0.4);
+            border-color: rgba(232, 180, 184, 0.8);
+            transform: translateY(-2px);
+        }
+
+        /* 2-COLUMN LAYOUT FOR CONTENT */
+        .work-modal-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .work-modal-section {
+            margin-bottom: 0;
+        }
+
+        .work-modal-section-title {
+            font-family: 'Anybody', sans-serif;
+            font-weight: 800;
+            color: rgba(45, 45, 45, 0.95);
+            font-size: 15px;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .work-modal-section-text {
+            font-family: 'Nunito', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 1.7;
+            color: rgba(45, 45, 45, 0.8);
+        }
+
+        /* Scrollbar styling */
+        .work-modal-box::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .work-modal-box::-webkit-scrollbar-track {
+            background: rgba(232, 180, 184, 0.1);
+            border-radius: 20px;
+        }
+
+        .work-modal-box::-webkit-scrollbar-thumb {
+            background: rgba(232, 180, 184, 0.4);
+            border-radius: 20px;
+        }
+
+        .work-modal-box::-webkit-scrollbar-thumb:hover {
+            background: rgba(232, 180, 184, 0.6);
+        }
+
+        #contact {
+            background: #b8a054;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Drifting dots for contact */
+        #contact-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .contact-content {
+            max-width: 600px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .contact-info {
+            font-size: 28px;
+            line-height: 2.2;
+            margin-top: 50px;
+        }
+
+        .contact-info a {
+            color: #2d2d2d;
+            text-decoration: none;
+            border-bottom: 3px solid #2d2d2d;
+            padding-bottom: 2px;
+            transition: all 0.3s;
+            font-weight: 700;
+        }
+
+        .contact-info a:hover {
+            background: rgba(232, 180, 184, 0.4);
+            padding: 6px 12px 8px;
+        }
+
+        .contact-invite {
+            margin-top: 40px;
+            font-size: 19px;
+            opacity: 0.85;
+            font-weight: 600;
+        }
+
+        /* ========================================
+           MOBILE / iPHONE RESPONSIVE STYLES
+           ======================================== */
+
+        @media (max-width: 768px) {
+            /* GENERAL MOBILE FIXES */
+            body {
+                overflow-x: hidden;
+                overflow-y: auto; /* Enable vertical scrolling */
+            }
+
+            /* FIX SCROLL CONTAINER FOR VERTICAL MOBILE */
+            .scroll-container {
+                display: block !important; /* Change from flex to block */
+                width: 100vw !important; /* Full width, not 400vw */
+                height: auto !important; /* Auto height, not 100vh */
+                transform: none !important; /* Disable translateX */
+                transition: none !important; /* No slide animation */
+            }
+
+            /* SECTIONS - STACK VERTICALLY */
+            section {
+                width: 100% !important; /* Full width */
+                height: auto !important; /* Auto height for content */
+                min-height: 100vh; /* Each section fills screen */
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                padding: 60px 20px;
+            }
+
+            /* SMOOTH SCROLLING */
+            html {
+                scroll-behavior: smooth;
+                -webkit-overflow-scrolling: touch; /* iOS momentum scrolling */
+            }
+
+            /* HOME PAGE - MOBILE FIX */
+            #home {
+                padding: 80px 20px 60px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+
+            .home-text {
+                z-index: 3;
+                margin-bottom: 50px;
+            }
+
+            .home-text h1 {
+                font-size: 72px !important;
+                font-family: 'Anybody', sans-serif;
+                letter-spacing: -3px;
+                margin-bottom: 15px;
+            }
+
+            .home-text p {
+                font-size: 16px;
+                font-family: 'Anybody', sans-serif;
+            }
+
+            /* NAVIGATION - MOBILE */
+            .home-nav {
+                position: static;
+                transform: none;
+                flex-direction: column;
+                gap: 12px;
+                margin: 0 auto;
+                width: 100%;
+                max-width: 280px;
+                z-index: 5;
+            }
+
+            .nav-btn {
+                font-size: 14px;
+                font-family: 'Nunito', sans-serif;
+                padding: 14px 24px;
+                width: 100%;
+                text-align: center;
+            }
+
+            #lang-toggle {
+                width: 100%;
+                padding: 14px 24px;
+                padding-top: 14px !important;
+            }
+
+            /* Remove the dot above nav buttons on mobile */
+            .home-nav a::before {
+                display: none;
+            }
+
+            .home-nav a {
+                padding-top: 14px !important;
+            }
+
+            /* SCROLL HINT - MOBILE */
+            .scroll-hint {
+                position: static;
+                transform: none;
+                margin-top: 35px;
+                font-size: 12px;
+                font-family: 'Nunito', sans-serif;
+                opacity: 0.6;
+                text-align: center;
+            }
+
+            /* CANVAS - MOBILE OPTIMIZED */
+            #particles {
+                opacity: 0.4;
+                position: fixed; /* Keep particles fixed while scrolling */
+            }
+
+            /* ABOUT PAGE - MOBILE */
+            #about {
+                padding: 80px 30px;
+            }
+
+            .section-title {
+                font-size: 52px;
+                font-family: 'Anybody', sans-serif;
+                margin-bottom: 25px;
+            }
+
+            .about-teaser {
+                font-size: 12px;
+                font-family: 'Nunito', sans-serif;
+                margin-bottom: 30px;
+            }
+
+            .about-text {
+                font-size: 18px;
+                font-family: 'Nunito', sans-serif;
+                line-height: 1.9;
+                max-width: 100%;
+            }
+
+            /* WORKS PAGE - MOBILE */
+            #works {
+                padding: 80px 25px;
+            }
+
+            .works-container {
+                max-width: 100%;
+            }
+
+            /* DOTS GRID - 2 COLUMNS ON MOBILE */
+            .dots-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 35px;
+                margin-top: 30px;
+            }
+
+            /* DOTS - OPTIMIZED SIZE */
+            .experience-dot {
+                width: 85px;
+                height: 85px;
+            }
+
+            .dot-label {
+                font-size: 11px;
+                font-family: 'Nunito', sans-serif;
+                max-width: 95px;
+                line-height: 1.3;
+            }
+
+            .work-hint {
+                font-size: 13px;
+                font-family: 'Nunito', sans-serif;
+                margin-top: 35px;
+            }
+
+            /* MODAL - MOBILE OPTIMIZED */
+            .work-modal {
+                position: fixed; /* Keep modal fixed during scroll */
+            }
+
+            .work-modal-box {
+                width: 95vw;
+                max-width: none;
+                padding: 40px 25px;
+                max-height: 85vh;
+                border-radius: 25px;
+                overflow-y: auto; /* Scrollable content */
+            }
+
+            .work-modal-close {
+                width: 44px;
+                height: 44px;
+                font-size: 22px;
+                top: 15px;
+                right: 15px;
+            }
+
+            /* NAVIGATION ARROWS - MOBILE (ENHANCED!) */
+            .work-modal-nav {
+                width: 50px !important; /* Bigger for easier tapping */
+                height: 50px !important;
+                font-size: 28px; /* Bigger arrows */
+                background: rgba(232, 180, 184, 0.4) !important; /* More visible */
+                border: 3px solid rgba(232, 180, 184, 0.7) !important; /* Thicker border */
+                box-shadow: 0 4px 12px rgba(232, 180, 184, 0.3); /* Add shadow for depth */
+            }
+
+            .work-modal-prev {
+                left: 12px; /* Slightly more space from edge */
+            }
+
+            .work-modal-next {
+                right: 12px; /* Slightly more space from edge */
+            }
+
+            /* Add visual hint that arrows are tappable */
+            .work-modal-nav:active {
+                transform: translateY(-50%) scale(0.95); /* Press effect */
+                background: rgba(232, 180, 184, 0.6) !important;
+            }
+
+            /* MODAL HEADER - MOBILE */
+            .work-modal-title {
+                font-size: 30px;
+                font-family: 'Anybody', sans-serif;
+            }
+
+            .work-modal-year {
+                font-size: 14px;
+                font-family: 'Nunito', sans-serif;
+            }
+
+            .work-modal-subtitle {
+                font-size: 13px;
+                font-family: 'Nunito', sans-serif;
+            }
+
+            /* NUTSHELL - MOBILE OPTIMIZED FOR BULLET SCANNING */
+            .work-modal-nutshell {
+                padding: 30px 20px;
+            }
+
+            /* Section labels - smaller on mobile */
+            .nutshell-section-label {
+                font-size: 10px;
+                letter-spacing: 1.5px;
+                margin-bottom: 12px;
+            }
+
+            .nutshell-section-label.skills-label {
+                margin-top: 25px;
+            }
+
+            /* Bullet points - optimized for mobile reading */
+            .nutshell-bullets li {
+                font-size: 16px; /* Readable but not too big */
+                line-height: 1.7; /* More breathing room */
+                margin-bottom: 14px; /* Clear separation */
+                padding-left: 18px;
+            }
+
+            .nutshell-bullets li::before {
+                font-size: 18px;
+            }
+
+            /* Skills */
+            .nutshell-skills {
+                font-size: 12px;
+                font-family: 'Nunito', sans-serif;
+            }
+
+            .read-full-btn {
+                font-size: 13px; /* Slightly larger */
+                font-family: 'Nunito', sans-serif;
+                padding: 12px 28px; /* Bigger padding = easier to tap */
+                border: 3px solid rgba(232, 180, 184, 0.6); /* Thicker border */
+                background: rgba(232, 180, 184, 0.3); /* More visible */
+                box-shadow: 0 2px 8px rgba(232, 180, 184, 0.2); /* Subtle depth */
+            }
+
+            /* Press effect on tap */
+            .read-full-btn:active {
+                transform: scale(0.97);
+                background: rgba(232, 180, 184, 0.5);
+            }
+
+            .nutshell-cta {
+                margin-top: 25px;
+            }
+
+            /* FULL STORY - SINGLE COLUMN ON MOBILE */
+            .work-modal-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .work-modal-section-title {
+                font-size: 16px;
+                font-family: 'Nunito', sans-serif;
+            }
+
+            .work-modal-section-text {
+                font-size: 15px;
+                font-family: 'Nunito', sans-serif;
+                line-height: 1.8;
+            }
+
+            .toggle-btn {
+                font-size: 13px; /* Bigger text */
+                font-family: 'Nunito', sans-serif;
+                padding: 12px 24px; /* Bigger padding */
+                border: 3px solid rgba(232, 180, 184, 0.6); /* Thicker border */
+                background: rgba(232, 180, 184, 0.25);
+                box-shadow: 0 2px 8px rgba(232, 180, 184, 0.2);
+                margin-bottom: 20px; /* Space from content */
+            }
+
+            /* Press effect */
+            .toggle-btn:active {
+                transform: scale(0.97);
+                background: rgba(232, 180, 184, 0.4);
+            }
+
+            /* CONTACT PAGE - MOBILE */
+            #contact {
+                padding: 80px 30px;
+            }
+
+            .contact-content h2 {
+                font-size: 38px;
+                font-family: 'Anybody', sans-serif;
+            }
+
+            .contact-info {
+                font-size: 18px;
+                font-family: 'Nunito', sans-serif;
+                line-height: 1.8;
+            }
+
+            .contact-info a {
+                font-family: 'Nunito', sans-serif;
+                font-size: 18px;
+            }
+        }
+
+        /* EXTRA SMALL PHONES (iPhone SE, etc.) */
+        @media (max-width: 400px) {
+            .home-text h1 {
+                font-size: 60px !important; /* Smaller for tiny screens */
+                font-family: 'Anybody', sans-serif;
+                letter-spacing: -2px;
+            }
+
+            .home-text p {
+                font-size: 15px;
+                font-family: 'Anybody', sans-serif;
+            }
+
+            .nav-btn {
+                font-size: 13px;
+                font-family: 'Nunito', sans-serif;
+                padding: 12px 20px;
+            }
+
+            .section-title {
+                font-size: 44px;
+                font-family: 'Anybody', sans-serif;
+            }
+
+            .about-text {
+                font-size: 17px;
+                font-family: 'Nunito', sans-serif;
+            }
+
+            .dots-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .experience-dot {
+                width: 90px;
+                height: 90px;
+            }
+
+            .work-modal-box {
+                padding: 30px 20px;
+            }
+
+            .nutshell-impact {
+                font-size: 17px;
+                font-family: 'Nunito', sans-serif;
+            }
+
+            .work-modal-title {
+                font-size: 26px;
+                font-family: 'Anybody', sans-serif;
+            }
+
+            .contact-content h2 {
+                font-size: 34px;
+                font-family: 'Anybody', sans-serif;
+            }
+        }
+
+        /* LANDSCAPE MOBILE */
+        @media (max-width: 900px) and (orientation: landscape) {
+            section {
+                min-height: auto; /* Don't force full height in landscape */
+                padding: 40px 20px;
+            }
+
+            .work-modal-box {
+                max-height: 90vh;
+                padding: 25px 30px;
+            }
+
+            .dots-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 20px;
+            }
+
+            .experience-dot {
+                width: 70px;
+                height: 70px;
+            }
+
+            .dot-label {
+                font-size: 10px;
+                font-family: 'Nunito', sans-serif;
+            }
+        }
+
+        /* TOUCH IMPROVEMENTS FOR IPHONE */
+        @media (hover: none) and (pointer: coarse) {
+            /* Less dramatic hover effects on touch */
+            .experience-dot:hover {
+                transform: scale(1.05);
+            }
+
+            .nav-btn:hover,
+            .read-full-btn:hover,
+            .toggle-btn:hover {
+                transform: none;
+            }
+
+            /* Bigger tap targets (Apple recommends 44x44px minimum) */
+            .experience-dot {
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            .nav-btn,
+            .read-full-btn,
+            .toggle-btn,
+            .work-modal-close,
+            .work-modal-nav {
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            /* Prevent text selection on tap */
+            * {
+                -webkit-tap-highlight-color: transparent;
+                -webkit-touch-callout: none;
+            }
+
+            /* But allow selection in text content */
+            .about-text,
+            .work-modal-section-text,
+            .nutshell-impact,
+            .contact-info {
+                -webkit-touch-callout: text;
+                -webkit-user-select: text;
+                user-select: text;
+            }
+        }
+
+        /* SMOOTH SCROLLING FOR MOBILE */
+        @media (max-width: 768px) {
+            html {
+                scroll-behavior: smooth;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            body {
+                -webkit-text-size-adjust: 100%; /* Prevent text zoom on orientation change */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <h1>RF</h1>
+    </div>
+
+    <div class="content" id="content">
+        <canvas id="particle-canvas"></canvas>
+        <div class="cursor-glow" id="glow"></div>
+
+        <div class="scroll-container" id="container">
+            <section id="home">
+                <div class="home-text">
+                    <h1 class="translate" data-en="RF" data-zh="RF">RF</h1>
+                    <p class="translate" data-en="Let's connect the dots" data-zh="讓我們連接這些點">Let's connect the dots</p>
+                </div>
+                <nav class="home-nav">
+                    <a href="#" class="nav-btn translate" data-section="0" data-en="Home" data-zh="首頁">Home</a>
+                    <a href="#" class="nav-btn translate" data-section="1" data-en="About" data-zh="關於">About</a>
+                    <a href="#" class="nav-btn translate" data-section="2" data-en="Works" data-zh="作品">Works</a>
+                    <a href="#" class="nav-btn translate" data-section="3" data-en="Contact" data-zh="聯絡">Contact</a>
+                    <a href="#" class="nav-btn" id="lang-toggle" data-lang="en">CN</a>
+                </nav>
+                <div class="scroll-hint translate" data-en="Navigate to collect →" data-zh="移動以收集 →">Navigate to collect →</div>
+            </section>
+
+            <section id="about">
+                <div class="about-content">
+                    <h2 class="section-title translate" data-en="About" data-zh="關於">About</h2>
+                    
+                    <!-- Clean teaser line -->
+                    <div class="about-teaser translate" data-en="8 experiences  •  Brand, digital, storytelling" data-zh="8 段經歷  •  品牌、數位、故事">8 experiences  •  Brand, digital, storytelling</div>
+                    
+                    <div class="about-text">
+                        <p class="translate" data-en="I believe we're shaped by the people, places, and moments we encounter along the way. This portfolio is an archive of those dots: past experiences, lessons, and constraints, connected across time to form who I am today. Btw, this is Rae Fan. All the work here comes from in-house roles, each different in structure, culture, and pace. Together, they became the nutrition that shaped how I think, work, and lead. I embrace ambiguity with grit, balance creativity with real-world e-commerce constraints, and hold the big picture while staying grounded in the details. Right now, my focus is on crafting digital experiences at the intersection of brand, systems, and commercial reality." data-zh="我相信我們是由沿途遇到的人、地方和時刻所塑造的。這個作品集是這些點的檔案：過去的經歷、教訓和限制，跨越時間連接在一起，形成了今天的我。順帶一提，我是范睿涵。這裡的所有工作都來自內部職位，每個職位在結構、文化和節奏上都不同。它們一起成為塑造我如何思考、工作和領導的養分。我以毅力擁抱模糊性，在創造力與現實世界電子商務限制之間取得平衡，並在掌握大局的同時紮根於細節。現在，我的重點是在品牌、系統和商業現實的交叉點打造數位體驗。">I believe we're shaped by the people, places, and moments we encounter along the way. This portfolio is an archive of those dots: past experiences, lessons, and constraints, connected across time to form who I am today. Btw, this is Rae Fan. All the work here comes from in-house roles, each different in structure, culture, and pace. Together, they became the nutrition that shaped how I think, work, and lead. I embrace ambiguity with grit, balance creativity with real-world e-commerce constraints, and hold the big picture while staying grounded in the details. Right now, my focus is on crafting digital experiences at the intersection of brand, systems, and commercial reality.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="works">
+                <div class="works-container">
+                    <h2 class="section-title translate" data-en="Works" data-zh="作品">Works</h2>
+                    
+                    <!-- EXPERIENCES SECTION -->
+                    <div class="work-section">
+                        <div class="dots-grid">
+                            <div class="dot-container">
+                                <div class="experience-dot dot-1" data-work="1"></div>
+                                <div class="dot-label translate" data-en="Luminex Design" data-zh="Luminex Design">Luminex Design</div>
+                            </div>
+                            <div class="dot-container">
+                                <div class="experience-dot dot-2" data-work="2"></div>
+                                <div class="dot-label translate" data-en="adidas" data-zh="adidas">adidas</div>
+                            </div>
+                            <div class="dot-container">
+                                <div class="experience-dot dot-3" data-work="3"></div>
+                                <div class="dot-label translate" data-en="Farfetch China" data-zh="Farfetch China">Farfetch China</div>
+                            </div>
+                            <div class="dot-container">
+                                <div class="experience-dot dot-4" data-work="4"></div>
+                                <div class="dot-label translate" data-en="Inject Taipei" data-zh="Inject Taipei">Inject Taipei</div>
+                            </div>
+                            <div class="dot-container">
+                                <div class="experience-dot dot-5" data-work="5"></div>
+                                <div class="dot-label translate" data-en="Farfetch UK" data-zh="Farfetch UK">Farfetch UK</div>
+                            </div>
+                            <div class="dot-container">
+                                <div class="experience-dot dot-6" data-work="6"></div>
+                                <div class="dot-label translate" data-en="WECC UK" data-zh="WECC UK">WECC UK</div>
+                            </div>
+                            <div class="dot-container">
+                                <div class="experience-dot dot-7" data-work="7"></div>
+                                <div class="dot-label translate" data-en="South London Gallery" data-zh="South London Gallery">South London Gallery</div>
+                            </div>
+                            <div class="dot-container">
+                                <div class="experience-dot dot-8" data-work="8"></div>
+                                <div class="dot-label translate" data-en="Burberry Taipei" data-zh="Burberry Taipei">Burberry Taipei</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="work-hint translate" data-en="Click any dot to explore" data-zh="點擊任何點來探索">Click any dot to explore</div>
+                </div>
+            </section>
+
+            <section id="contact">
+                <canvas id="contact-canvas"></canvas>
+                <div class="contact-content">
+                    <h2 class="section-title translate" data-en="Contact" data-zh="聯絡">Contact</h2>
+                    <div class="contact-info">
+                        <a href="https://www.linkedin.com/in/juihanfan/" target="_blank">LinkedIn</a>
+                    </div>
+                    <div class="contact-invite translate" data-en="Let's chat!" data-zh="讓我們聊聊！">Let's chat!</div>
+                </div>
+            </section>
+        </div>
+
+        <div class="work-modal" id="modal">
+            <div class="work-modal-box">
+                <div class="work-modal-close" id="close">×</div>
+                <div class="work-modal-nav work-modal-prev" id="prev">‹</div>
+                <div class="work-modal-nav work-modal-next" id="next">›</div>
+                <div id="modal-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+(function() {
+    var currentLang = 'en';
+    
+    setTimeout(function() {
+        document.getElementById('loading').classList.add('hide');
+        document.getElementById('content').classList.add('show');
+        initHomeParticles(); // HOME PAGE ONLY
+        initContactDots(); // CONTACT PAGE DRIFTING
+        initNavigation();
+        initGlobalCursorGlow(); // CURSOR GLOW ON ALL PAGES
+    }, 1500);
+
+    // Language toggle
+    document.getElementById('lang-toggle').addEventListener('click', function(e) {
+        e.preventDefault();
+        currentLang = currentLang === 'en' ? 'zh' : 'en';
+        this.textContent = currentLang === 'en' ? 'CN' : 'EN';
+        
+        document.querySelectorAll('.translate').forEach(function(el) {
+            el.textContent = el.getAttribute('data-' + currentLang);
+        });
+    });
+
+    function initNavigation() {
+        var container = document.getElementById('container');
+        var current = 0;
+        var canvas = document.getElementById('particle-canvas');
+
+        function updateCanvasVisibility() {
+            if (current === 0) { // HOME PAGE
+                canvas.classList.add('home-only');
+            } else {
+                canvas.classList.remove('home-only');
+            }
+        }
+
+        document.querySelectorAll('.nav-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                // Skip if this is the language toggle button
+                if (btn.id === 'lang-toggle') return;
+                
+                e.preventDefault();
+                
+                // Check if mobile
+                var isMobileView = window.innerWidth <= 768;
+                
+                if (isMobileView) {
+                    // MOBILE: Smooth scroll to section
+                    var sectionIndex = parseInt(btn.dataset.section);
+                    var sections = ['home', 'about', 'works', 'contact'];
+                    var targetSection = document.getElementById(sections[sectionIndex]);
+                    
+                    if (targetSection) {
+                        targetSection.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                } else {
+                    // DESKTOP: Horizontal slide
+                    current = parseInt(btn.dataset.section);
+                    container.style.transform = 'translateX(-' + (current * 100) + 'vw)';
+                    updateCanvasVisibility();
+                }
+            });
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' && current < 3) {
+                current++;
+                container.style.transform = 'translateX(-' + (current * 100) + 'vw)';
+                updateCanvasVisibility();
+            } else if (e.key === 'ArrowLeft' && current > 0) {
+                current--;
+                container.style.transform = 'translateX(-' + (current * 100) + 'vw)';
+                updateCanvasVisibility();
+            }
+        });
+
+        var scrolling = false;
+        
+        // Only enable horizontal scroll on desktop (not mobile)
+        var isMobile = window.innerWidth <= 768;
+        
+        if (!isMobile) {
+            document.addEventListener('wheel', function(e) {
+                if (scrolling) return;
+                
+                if (e.deltaY > 0 && current < 3) {
+                    e.preventDefault();
+                    current++;
+                    container.style.transform = 'translateX(-' + (current * 100) + 'vw)';
+                    updateCanvasVisibility();
+                    scrolling = true;
+                    setTimeout(function() { scrolling = false; }, 1500);
+                } else if (e.deltaY < 0 && current > 0) {
+                    e.preventDefault();
+                    current--;
+                    container.style.transform = 'translateX(-' + (current * 100) + 'vw)';
+                    updateCanvasVisibility();
+                    scrolling = true;
+                    setTimeout(function() { scrolling = false; }, 1500);
+                }
+            }, { passive: false });
+        }
+        
+        // Re-check on resize
+        window.addEventListener('resize', function() {
+            isMobile = window.innerWidth <= 768;
+        });
+
+        updateCanvasVisibility(); // Initial state
+    }
+
+    // HOME PAGE PARTICLES - EXACT original working version!
+    function initHomeParticles() {
+        var canvas = document.getElementById('particle-canvas');
+        var ctx = canvas.getContext('2d');
+        var glow = document.getElementById('glow');
+        
+        canvas.width = window.innerWidth; // HOME PAGE ONLY
+        canvas.height = window.innerHeight;
+
+        var particles = [];
+        var mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        var colors = ['#e8b4b8', '#c8d5b9', '#f5ebe0', '#f4c5a8'];
+
+        // 45 particles scattered
+        for (var i = 0; i < 45; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                baseX: 0,
+                baseY: 0,
+                size: Math.random() * 5 + 4, // 4-9px
+                color: colors[Math.floor(Math.random() * colors.length)],
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: (Math.random() - 0.5) * 0.4,
+                orbitAngle: Math.random() * Math.PI * 2,
+                collected: false,
+                collectAnimation: 0
+            });
+            particles[i].baseX = particles[i].x;
+            particles[i].baseY = particles[i].y;
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                
+                // Skip if fully collected
+                if (p.collectAnimation >= 1) continue;
+                
+                // Particles move freely
+                p.baseX += p.vx;
+                p.baseY += p.vy;
+                if (p.baseX < 0 || p.baseX > canvas.width) p.vx *= -1;
+                if (p.baseY < 0 || p.baseY > canvas.height) p.vy *= -1;
+
+                // Check if cursor scrolled through particle
+                if (!p.collected) {
+                    var distToCursor = Math.sqrt(Math.pow(mouse.x - p.x, 2) + Math.pow(mouse.y - p.y, 2));
+                    if (distToCursor < 50) {
+                        p.collected = true;
+                    }
+                }
+                
+                // Animate collection
+                if (p.collected) {
+                    p.collectAnimation += 0.04;
+                }
+
+                // ORBIT effect - ORIGINAL parameters
+                var dx = mouse.x - p.baseX;
+                var dy = mouse.y - p.baseY;
+                var distToMouse = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distToMouse < 220 && !p.collected) {
+                    var force = (220 - distToMouse) / 220;
+                    p.orbitAngle += 0.05 * force;
+                    var orbitDist = distToMouse * 0.7;
+                    var targetX = mouse.x + Math.cos(p.orbitAngle) * orbitDist;
+                    var targetY = mouse.y + Math.sin(p.orbitAngle) * orbitDist;
+                    p.x += (targetX - p.x) * 0.15 * force;
+                    p.y += (targetY - p.y) * 0.15 * force;
+                } else if (!p.collected) {
+                    p.x += (p.baseX - p.x) * 0.1;
+                    p.y += (p.baseY - p.y) * 0.1;
+                }
+
+                // Draw with fade out - ILLUMINATING!
+                var opacity = 1 - p.collectAnimation;
+                var currentSize = p.size * (1 - p.collectAnimation * 0.5);
+                
+                // STRONGER GLOW - more illuminating!
+                ctx.shadowBlur = 25 * opacity; // Increased from 18
+                ctx.shadowColor = p.color;
+                ctx.globalAlpha = opacity * 0.95; // Slightly more opaque
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // EXTRA OUTER GLOW for illumination effect
+                if (!p.collected) {
+                    ctx.globalAlpha = 0.3;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, currentSize + 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.globalAlpha = 1;
+                ctx.shadowBlur = 0;
+            }
+
+            // Connections removed for cleaner look
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        document.addEventListener('mousemove', function(e) {
+            // Simple tracking - HOME PAGE canvas only
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            glow.style.left = e.clientX + 'px';
+            glow.style.top = e.clientY + 'px';
+            glow.style.opacity = '1';
+        });
+
+        document.addEventListener('mouseleave', function() {
+            glow.style.opacity = '0';
+        });
+
+        window.addEventListener('resize', function() {
+            canvas.width = window.innerWidth; // HOME PAGE ONLY
+            canvas.height = window.innerHeight;
+        });
+    }
+
+    // CONTACT PAGE - gentle drifting dots (no crashes!)
+    function initContactDots() {
+        var canvas = document.getElementById('contact-canvas');
+        if (!canvas) return;
+        
+        var ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        var dots = [];
+        var colors = ['rgba(232, 180, 184, 0.4)', 'rgba(200, 213, 185, 0.4)', 'rgba(245, 235, 224, 0.4)'];
+
+        // Only 8 dots - lightweight!
+        for (var i = 0; i < 8; i++) {
+            dots.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 8 + 10,
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: (Math.random() - 0.5) * 0.4,
+                color: colors[Math.floor(Math.random() * colors.length)]
+            });
+        }
+
+        function drift() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (var i = 0; i < dots.length; i++) {
+                var d = dots[i];
+                d.x += d.vx;
+                d.y += d.vy;
+                
+                if (d.x < 0 || d.x > canvas.width) d.vx *= -1;
+                if (d.y < 0 || d.y > canvas.height) d.vy *= -1;
+                
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = d.color;
+                ctx.fillStyle = d.color;
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+            
+            requestAnimationFrame(drift);
+        }
+        drift();
+
+        window.addEventListener('resize', function() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    }
+
+    // GLOBAL CURSOR GLOW - works on ALL pages!
+    function initGlobalCursorGlow() {
+        var glow = document.getElementById('glow');
+        
+        document.addEventListener('mousemove', function(e) {
+            glow.style.left = e.clientX + 'px';
+            glow.style.top = e.clientY + 'px';
+            glow.style.opacity = '1';
+        });
+
+        document.addEventListener('mouseleave', function() {
+            glow.style.opacity = '0';
+        });
+    }
+
+    function initParticles() {
+        var canvas = document.getElementById('particle-canvas');
+        var ctx = canvas.getContext('2d');
+        var glow = document.getElementById('glow');
+        
+        canvas.width = window.innerWidth * 4;
+        canvas.height = window.innerHeight;
+
+        var particles = [];
+        var mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        var colors = ['#e8b4b8', '#c8d5b9', '#f5ebe0', '#f4c5a8'];
+
+        // BIGGER dots - 10-18px
+        for (var i = 0; i < 35; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                baseX: 0,
+                baseY: 0,
+                size: Math.random() * 8 + 10, // 10-18px - BIG & VISIBLE
+                color: colors[Math.floor(Math.random() * colors.length)],
+                vx: (Math.random() - 0.5) * 0.6,
+                vy: (Math.random() - 0.5) * 0.6,
+                orbitAngle: Math.random() * Math.PI * 2,
+                collected: false,
+                collectAnimation: 0
+            });
+            particles[i].baseX = particles[i].x;
+            particles[i].baseY = particles[i].y;
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                if (p.collectAnimation >= 1) continue;
+                
+                p.baseX += p.vx;
+                p.baseY += p.vy;
+                if (p.baseX < 0 || p.baseX > canvas.width) p.vx *= -1;
+                if (p.baseY < 0 || p.baseY > canvas.height) p.vy *= -1;
+
+                if (!p.collected) {
+                    var distToCursor = Math.sqrt(Math.pow(mouse.x - p.x, 2) + Math.pow(mouse.y - p.y, 2));
+                    if (distToCursor < 80) {
+                        p.collected = true;
+                    }
+                }
+                
+                if (p.collected) {
+                    p.collectAnimation += 0.08; // Fast collection
+                }
+
+                // MINIMAL ORBIT
+                var dx = mouse.x - p.baseX;
+                var dy = mouse.y - p.baseY;
+                var distToMouse = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distToMouse < 150 && !p.collected) { // Smaller radius
+                    var force = (150 - distToMouse) / 150;
+                    p.orbitAngle += 0.015 * force; // VERY SLOW orbit
+                    var orbitDist = distToMouse * 0.85;
+                    var targetX = mouse.x + Math.cos(p.orbitAngle) * orbitDist;
+                    var targetY = mouse.y + Math.sin(p.orbitAngle) * orbitDist;
+                    p.x += (targetX - p.x) * 0.1 * force;
+                    p.y += (targetY - p.y) * 0.1 * force;
+                } else if (!p.collected) {
+                    p.x += (p.baseX - p.x) * 0.06;
+                    p.y += (p.baseY - p.y) * 0.06;
+                }
+
+                // STRONG ILLUMINATION
+                var opacity = 1 - p.collectAnimation;
+                var currentSize = p.size * (1 - p.collectAnimation * 0.3);
+                
+                ctx.shadowBlur = 30 * opacity; // STRONG glow
+                ctx.shadowColor = p.color;
+                ctx.globalAlpha = opacity;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                ctx.shadowBlur = 0;
+            }
+
+            // Connections
+            for (var a = 0; a < particles.length; a++) {
+                if (particles[a].collectAnimation >= 1) continue;
+                for (var b = a + 1; b < particles.length; b++) {
+                    if (particles[b].collectAnimation >= 1) continue;
+                    
+                    var dx = particles[a].x - particles[b].x;
+                    var dy = particles[a].y - particles[b].y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 150) {
+                        var opacity = (1 - particles[a].collectAnimation) * (1 - particles[b].collectAnimation);
+                        ctx.strokeStyle = 'rgba(45, 45, 45, ' + ((1 - dist / 150) * 0.32 * opacity) + ')';
+                        ctx.lineWidth = 2.2;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[a].x, particles[a].y);
+                        ctx.lineTo(particles[b].x, particles[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        document.addEventListener('mousemove', function(e) {
+            var container = document.getElementById('container');
+            var transform = container.style.transform;
+            var offsetX = 0;
+            if (transform && transform.includes('translateX')) {
+                var match = transform.match(/translateX\((-?\d+)vw\)/);
+                if (match) {
+                    offsetX = parseInt(match[1]) * window.innerWidth / 100 * -1;
+                }
+            }
+            
+            mouse.x = e.clientX + offsetX;
+            mouse.y = e.clientY;
+            glow.style.left = e.clientX + 'px';
+            glow.style.top = e.clientY + 'px';
+            glow.style.opacity = '1';
+        });
+
+        document.addEventListener('mouseleave', function() {
+            glow.style.opacity = '0';
+        });
+
+        window.addEventListener('resize', function() {
+            canvas.width = window.innerWidth * 4;
+            canvas.height = window.innerHeight;
+        });
+    }
+
+    var modal = document.getElementById('modal');
+    var modalContent = document.getElementById('modal-content');
+    var closeBtn = document.getElementById('close');
+
+    var workData = {
+        1: { 
+            title: "Luminex Design", 
+            year: "Head of Marketing", 
+            subtitle: "UK-based cross-border e-commerce · Lighting & makeup brush brands",
+            nutshell: "Walked into a startup with zero marketing infrastructure. Built the entire function for 3 brands. First 30 days: 1,000% follower growth, 30% lift in Amazon engagement. My thing is turning chaos into structure that scales. SKILLS: 0→1 building · Multi-brand strategy · Startup growth",
+            sections: [
+                {
+                    title: "Role",
+                    text: "Walked into a UK startup running 3 e-commerce brands. They had no marketing function. Built it from scratch. Owned everything: team structure, brand positioning, digital strategy, execution across Amazon and social."
+                },
+                {
+                    title: "Impact",
+                    text: "First month: <strong>1,000% social follower growth</strong> and <strong>30% Amazon engagement lift</strong>. Set up foundations for growth across multiple brands and channels while building the team."
+                },
+                {
+                    title: "Learning",
+                    text: "Learned I'm good at <strong>building in chaos</strong>. No playbook? I write one. No structure? I create it. Realized I can walk into uncertainty and create momentum fast."
+                },
+                {
+                    title: "What I Carry Forward",
+                    text: "<strong>0→1 building</strong>, <strong>cross-border e-commerce</strong>, and <strong>execution under pressure</strong>. Also: growing people is the best thing a company can invest in."
+                }
+            ]
+        },
+        2: { 
+            title: "adidas", 
+            year: "Digital Experience Planning Manager", 
+            subtitle: "Global sports brand · Digital commerce",
+            nutshell: "Led World Cup digital campaign for Greater China. Football sales up 40% YoY. Tripled content-driven GMV on Tmall for 618 and Double 11. Directed seasonal creative for 3 years. SKILLS: Campaign strategy · Creative direction · E-commerce",
+            sections: [
+                {
+                    title: "Role",
+                    text: "Owned <strong>digital experience strategy for Greater China</strong>. Had to balance brand storytelling with hard commercial targets. Led cross-functional teams across Product, Data, UX/UI to design digital that actually converts."
+                },
+                {
+                    title: "Impact",
+                    text: "<strong>40% YoY football sales growth</strong> through World Cup campaign for Greater China. <strong>Tripled Tmall content-driven GMV</strong> for 618 and Double 11. Led <strong>seasonal creative direction for 3 years</strong> covering footwear and apparel launches. Built frameworks that worked season after season."
+                },
+                {
+                    title: "Learning",
+                    text: "The best digital work serves <strong>people and performance</strong>. Start with a real business problem, then build creative strategies that move numbers. The uncomfortable decisions usually lead to the strongest work."
+                },
+                {
+                    title: "What I Carry Forward",
+                    text: "<strong>Navigating complexity in big orgs</strong>, <strong>influencing through storytelling</strong>, and <strong>leading creative with commercial accountability</strong>. Also: sports marketing done right is the most honest storytelling there is."
+                }
+            ]
+        },
+        3: { 
+            title: "Farfetch China", 
+            year: "UX/UI Writer → Content Planner", 
+            subtitle: "Global luxury e-commerce platform",
+            nutshell: "Started writing UX copy. Got promoted to build content workflows for a new app launch. Coordinated Product, Commercial, and Marketing across markets. Shipped on time with global alignment. Learned the difference between craft and systems. SKILLS: Content operations · UX writing · Cross-market coordination",
+            sections: [
+                {
+                    title: "Role",
+                    text: "Started as <strong>UX/UI Writer</strong> for luxury digital experiences. Web, app, WeChat. Got promoted to <strong>Content Planner</strong> to build the <strong>content workflow for a major app launch</strong>. Partnered with Product, Commercial, and Marketing to align globally."
+                },
+                {
+                    title: "Impact",
+                    text: "<strong>Shipped coordinated content launches</strong> across Farfetch's global ecosystem. On time, on brief, in sync across markets. The <strong>workflows I built</strong> made cross-functional work smoother and created repeatable processes."
+                },
+                {
+                    title: "Learning",
+                    text: "Learned <strong>the difference between craft and systems</strong>. Craft is writing one perfect headline. Systems are building the process so every team can write perfect headlines, every time. Content becomes a commercial engine when you pair it with good workflows."
+                },
+                {
+                    title: "What I Carry Forward",
+                    text: "<strong>UX writing</strong>, <strong>luxury storytelling</strong>, and <strong>content operations at scale</strong>. Can design workflows that align global teams, balance brand and performance, ship on time without losing quality."
+                }
+            ]
+        },
+        4: { 
+            title: "Inject Taipei", 
+            year: "Creative & Content Role", 
+            subtitle: "Early-stage creative studio · Storytelling & experiential projects",
+            nutshell: "Designed dining experiences with retired home cooks. Visited their kitchens, captured their stories, built the events. Sold out fast. Also worked on PR for high-end furniture and restaurant brands. Good marketing creates experiences people actually want. SKILLS: Experiential design · Storytelling · Cultural projects",
+            sections: [
+                {
+                    title: "Role",
+                    text: "Led <strong>experiential storytelling</strong> around food and culture. Designed intimate dining experiences with retired home cooks. Visited their homes, captured their stories, turned it into content and sold-out events. Also worked on <strong>brand PR</strong> for VG Group (designer furniture meets high-end dining)."
+                },
+                {
+                    title: "Impact",
+                    text: "The home cook series <strong>sold out within days</strong>. Proved that <strong>real stories create real demand</strong>. PR work positioned brands at the intersection of food, design, and hospitality."
+                },
+                {
+                    title: "Learning",
+                    text: "Changed how I think about marketing. It's not persuasion. It's <strong>creating experiences people actually want to be part of</strong>. Food is a powerful way to connect. The best brand work comes from cultural insight, not templates."
+                },
+                {
+                    title: "What I Carry Forward",
+                    text: "<strong>Human-centered brand strategy</strong>, <strong>experiential design</strong>, and <strong>cultural storytelling</strong>. This was where I started doing strategic work. Still shapes how I build brands today."
+                }
+            ]
+        },
+        5: { 
+            title: "Farfetch UK", 
+            year: "Localisation Writer", 
+            subtitle: "Global luxury e-commerce platform",
+            nutshell: "Localized 300+ luxury brand stories from English to Chinese. Web, app, editorial. Accuracy is baseline. The real work is making it feel natural in both languages. Cultural nuance isn't optional. SKILLS: Luxury localization · Bilingual content · Cross-cultural fluency",
+            sections: [
+                {
+                    title: "Role",
+                    text: "Adapted luxury brand content from English to Chinese. <strong>Web, app, editorial</strong>. Every piece had to keep brand voice, cultural relevance, and emotion across languages. Required deep research into brand heritage, fashion language, and cultural context."
+                },
+                {
+                    title: "Impact",
+                    text: "<strong>Localized 300+ brand stories, editorials, and UX/UI copies</strong>. Had to honor brand integrity while making it land authentically with Chinese audiences. Kept quality high even at volume."
+                },
+                {
+                    title: "Learning",
+                    text: "<strong>Nuance is everything in cross-cultural work</strong>. Translation isn't just accuracy. It's making language feel natural in both cultures so the meaning and emotion land right. Quality can't drop, even at scale."
+                },
+                {
+                    title: "What I Carry Forward",
+                    text: "<strong>Luxury localization</strong>, <strong>bilingual storytelling</strong>, and <strong>cultural sensitivity</strong>. Can navigate between markets with care for both brand intention and local context."
+                }
+            ]
+        },
+        6: { 
+            title: "WECC UK", 
+            year: "Production Coordinator", 
+            subtitle: "Immersive theatre production company",
+            nutshell: "Coordinated international theatre productions. Budgets, timelines, crews, cross-border logistics. Brought shows to China. Led 3 interns. Theatre taught me what applies to digital: good experiences make people feel something real. SKILLS: Production management · Team leadership · Cross-border coordination",
+            sections: [
+                {
+                    title: "Role",
+                    text: "Managed <strong>international immersive theatre productions</strong> from start to finish. Coordinated budgets, timelines, location scouting, crew onboarding, cross-border logistics. Led 3 interns. Partnered with creative and commercial teams to deliver ambitious work."
+                },
+                {
+                    title: "Impact",
+                    text: "Onboarded an <strong>international director</strong> and coordinated the company's participation in a <strong>major art fair in China</strong>. Introduced immersive theatre to a new market. Hit every deadline and budget."
+                },
+                {
+                    title: "Learning",
+                    text: "International productions need <strong>operational discipline</strong>. Time management, budget control, strong relationships. Working with artists taught me creative work is an exchange, not a finished thing. Theatre shaped how I think about <strong>digital experiences</strong> now. Both are about creating spaces where people feel something real."
+                },
+                {
+                    title: "What I Carry Forward",
+                    text: "<strong>Cross-border project management</strong>, <strong>team leadership</strong>, and <strong>stakeholder coordination</strong>. Human-centered approach to creative work. Respect for art, culture, and the people making it happen."
+                }
+            ]
+        },
+        7: { 
+            title: "South London Gallery", 
+            year: "Curatorial Intern", 
+            subtitle: "Public contemporary art institution",
+            nutshell: "Supported artist residencies and exhibitions. Helped archive work into digital systems. Community gallery work changed how I see creative practice. It's process and exchange, not just finished products. Foundation for everything after. SKILLS: Curatorial work · Digital archiving · Cultural programming",
+            sections: [
+                {
+                    title: "Role",
+                    text: "Supported the <strong>artist-in-residence programme</strong> and <strong>exhibition curation</strong> at a public contemporary art gallery. Worked with international artists during residencies. Helped digitize and archive materials."
+                },
+                {
+                    title: "Impact",
+                    text: "Contributed to smooth residency experiences. Supported the gallery's <strong>curatorial and archival work</strong>. Helped preserve and share contemporary art with the public."
+                },
+                {
+                    title: "Learning",
+                    text: "Changed how I see creative work. It's <strong>process and exchange</strong>, not just finished products. Community-focused gallery taught me art is most powerful when it's accessible and rooted in real experience. Laid foundation for my interest in <strong>storytelling and cultural work</strong>."
+                },
+                {
+                    title: "What I Carry Forward",
+                    text: "Respect for <strong>artistic practice</strong> and <strong>meaning-led work</strong>. Habit of looking for depth in everything I build. Belief that cultural insight makes better business."
+                }
+            ]
+        },
+        8: { 
+            title: "Burberry Taipei", 
+            year: "Merchandising Intern", 
+            subtitle: "Global luxury fashion brand",
+            nutshell: "First internship. One month, first year of university. Mystery shopped stores, helped with merchandising reports. Saw how brand intention and commercial structure work together. The moment I got curious about all of this. SKILLS: Luxury retail · Merchandising · Brand and commerce",
+            sections: [
+                {
+                    title: "Role",
+                    text: "<strong>One month summer internship</strong>, first year of university. Supported <strong>seasonal merchandising reports</strong>. Did <strong>mystery shopping</strong> across Burberry stores in Taipei. Evaluated product presentation, customer service, brand experience."
+                },
+                {
+                    title: "Impact",
+                    text: "Got to see how <strong>luxury brands run product, pricing, and retail experience</strong> to balance brand and business. Research fed into merchandising strategy."
+                },
+                {
+                    title: "Learning",
+                    text: "This is where it started. Saw that <strong>brand intention and commercial structure have to move together</strong>. Best brands don't choose between meaning and money. They use one to drive the other. Got curious about how brands create experiences that matter. Never stopped."
+                },
+                {
+                    title: "What I Carry Forward",
+                    text: "Foundation in <strong>luxury merchandising</strong>, <strong>retail experience</strong>, and <strong>brand-commerce balance</strong>. The curiosity from here still shapes how I think about brand, storytelling, and experience."
+                }
+            ]
+        }
+    };
+
+    var currentWork = 1;
+    var prevBtn = document.getElementById('prev');
+    var nextBtn = document.getElementById('next');
+    var viewMode = 'nutshell'; // Start with nutshell view
+
+    function showWork(workId) {
+        currentWork = workId;
+        var work = workData[workId];
+        
+        // Build header
+        var html = '<div class="work-modal-header">';
+        html += '<h2 class="work-modal-title">' + work.title + '</h2>';
+        html += '<div class="work-modal-year">' + work.year + '</div>';
+        if (work.subtitle) {
+            html += '<div class="work-modal-subtitle">' + work.subtitle + '</div>';
+        }
+        html += '</div>';
+        
+        // Content based on view mode
+        if (viewMode === 'nutshell') {
+            // REDESIGNED: Parse nutshell into scannable bullet points
+            var nutshellText = work.nutshell;
+            var parts = nutshellText.split('SKILLS:');
+            var impactText = parts[0].trim();
+            var skillsText = parts[1] ? parts[1].trim() : '';
+            
+            // Split impact into sentences (bullet points)
+            var impactBullets = impactText.split(/\.(?=\s+[A-Z])/); // Split on period followed by capital letter
+            impactBullets = impactBullets.map(s => s.trim()).filter(s => s.length > 0);
+            
+            html += '<div class="work-modal-nutshell">';
+            
+            // IMPACT section with bullet points
+            html += '<div class="nutshell-section-label">IMPACT</div>';
+            html += '<ul class="nutshell-bullets">';
+            impactBullets.forEach(function(bullet) {
+                if (bullet) {
+                    // Add period back if missing
+                    var cleanBullet = bullet.trim();
+                    if (!cleanBullet.endsWith('.')) cleanBullet += '.';
+                    html += '<li>' + cleanBullet + '</li>';
+                }
+            });
+            html += '</ul>';
+            
+            // SKILLS section
+            if (skillsText) {
+                html += '<div class="nutshell-section-label skills-label">SKILLS</div>';
+                html += '<div class="nutshell-skills">' + skillsText + '</div>';
+            }
+            
+            html += '</div>';
+            
+            html += '<div class="nutshell-cta">';
+            html += '<div class="read-full-btn" onclick="switchView(\'full\')">Read Full Story →</div>';
+            html += '</div>';
+        } else {
+            // Show full story with toggle option
+            html += '<div class="work-modal-toggle">';
+            html += '<button class="toggle-btn" onclick="switchView(\'nutshell\')">← Back to Summary</button>';
+            html += '</div>';
+            
+            if (work.sections && work.sections.length > 0) {
+                html += '<div class="work-modal-content">';
+                work.sections.forEach(function(section) {
+                    html += '<div class="work-modal-section">';
+                    html += '<div class="work-modal-section-title">' + section.title + '</div>';
+                    html += '<div class="work-modal-section-text">' + section.text + '</div>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+        }
+        
+        modalContent.innerHTML = html;
+        modal.classList.add('active');
+        
+        // Update navigation buttons
+        prevBtn.classList.toggle('disabled', currentWork === 1);
+        nextBtn.classList.toggle('disabled', currentWork === 8);
+    }
+
+    // Switch between nutshell and full view
+    window.switchView = function(mode) {
+        viewMode = mode;
+        showWork(currentWork);
+    };
+
+    document.querySelectorAll('.experience-dot').forEach(function(dot) {
+        dot.addEventListener('click', function() {
+            viewMode = 'nutshell'; // ALWAYS reset to nutshell when clicking a new dot
+            showWork(parseInt(dot.dataset.work));
+        });
+    });
+
+    closeBtn.addEventListener('click', function() {
+        modal.classList.remove('active');
+    });
+
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) modal.classList.remove('active');
+    });
+
+    // Navigation arrows
+    prevBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (currentWork > 1) showWork(currentWork - 1);
+    });
+
+    nextBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (currentWork < 8) showWork(currentWork + 1);
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (!modal.classList.contains('active')) return;
+        if (e.key === 'ArrowLeft' && currentWork > 1) showWork(currentWork - 1);
+        else if (e.key === 'ArrowRight' && currentWork < 8) showWork(currentWork + 1);
+        else if (e.key === 'Escape') modal.classList.remove('active');
+    });
+})();
+    </script>
+</body>
+</html>
